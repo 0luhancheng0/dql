@@ -1,6 +1,7 @@
 from torch.utils.tensorboard import SummaryWriter
 from pathlib import Path
 import torch
+import psutil
 class Logger:
     def __init__(self, hps):
         self.hps = hps 
@@ -11,6 +12,7 @@ class Logger:
         self.saved_episode_dir.mkdir(exist_ok=True)
         self.checkpoint_dir.mkdir(exist_ok=True)
         self.summary_writter = SummaryWriter(log_dir=str(self.log_dir / 'tensorboard_events'))
+        self.current_process = psutil.Process()
         return 
     def save_episodes(self, episodes):
         torch.save(episodes, str(self.saved_episode_dir))
@@ -22,6 +24,11 @@ class Logger:
             'optimizer': model.optimizer.state_dict()
         }
         torch.save(saved_dict, str(self.checkpoint_dir / str('saved_model-' + str(i_eposide) + '.pth')))
+        return 
+    def add_sys_info(self, i_eposide):
+        self.summary_writter.add_scalar('sys/cpu_percentage', self.current_process.cpu_percent(), i_eposide)
+        self.summary_writter.add_scalar(
+            'sys/memory_percent', self.current_process.memory_percent(), i_eposide)
         return 
     def load_checkpoint(self, path):
 

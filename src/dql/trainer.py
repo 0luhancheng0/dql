@@ -68,9 +68,11 @@ class Trainer:
             self.train_single_episode(i_episode)
             if i_episode % self.hps['log_interval'] == 0:
                 self.logger.add_scalar(
-                    'running_loss', self.running_loss / i_episode, i_episode)
+                    'episode/running_loss', self.running_loss / self.hps['log_interval'], i_episode)
                 self.logger.add_scalar(
-                    'running_reward', self.running_reward / i_episode, i_episode)
+                    'episode/running_reward', self.running_reward / self.hps['log_interval'], i_episode)
+                self.logger.add_scalar('episode/epsilon',self.eps_schedule(i_episode), i_episode)
+                self.logger.add_sys_info(i_episode)
                 self.running_reward = 0
                 self.running_loss = 0
             if i_episode % self.hps['checkpoint_interval'] == 0:
