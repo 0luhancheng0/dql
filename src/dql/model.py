@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 from dql.helper import Transition
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class ReplayMemory:
@@ -67,8 +67,8 @@ class DQN(nn.Module):
 class Model:
     def __init__(self, env, hps):
         self.hps = hps
-        self.summary_writter = SummaryWriter(
-            log_dir='runs/{}'.format(self.hps['envname']))
+        # self.summary_writter = SummaryWriter(
+        #     log_dir='runs/{}'.format(self.hps['envname']))
         self.policy_net = DQN(
             *self.hps['image_size'], env.action_space.n, self.hps['frame_length'])
         self.target_net = DQN(
@@ -76,6 +76,8 @@ class Model:
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.loss = torch.empty(1)
         self.optimizer = optim.RMSprop(self.policy_net.parameters())
+        self.target_net.eval()
+        self.policy_net.train()
         return
 
     def optimize_model(self, batch):
