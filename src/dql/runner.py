@@ -15,8 +15,7 @@ def parse_argument():
                             formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument('--envname', type=str, nargs='?', default='CartPole-v0',
                         help='Need to be a valid gym atari environment')
-    parser.add_argument('--train', type=bool, nargs='?', default=True, help='flag the training mode')
-    
+    parser.add_argument('--play', action='store_true', help='flag the eval mode')
     parser.add_argument('-b', '--batch_size', type=int, nargs='?', default=32,
                         help='How many samples to gather from replay memory for each update')
     parser.add_argument('-n', '--num_episode', type=int, nargs='?', default=100,
@@ -32,13 +31,14 @@ def parse_argument():
     parser.add_argument('--log_interval', type=int, nargs='?', default=1,
                         help='log will be written every <interval> episodes')
     parser.add_argument('--checkpoint_interval',
-                        type=int, nargs='?', default=5, help='checkpoint of model will be written every <interval> episodes')
+                        type=int, nargs='?', default=5, help='checkpoint of model will be written every <interval> episodes. This value also defines how frequently model will be evaluated during training')
     parser.add_argument('--log_dir', type=Path, nargs='?', default=Path('./runs'),
                         help='tensorboard events and saved model will be placed in <log_dir>/<envname> directory ')
     parser.add_argument('--eps_schedule', type=float, nargs='*', default=[
                         0.9, 0.05, 200], help='consume 3 values which defines the epsilon decay schedule (start, end, steps)')
     parser.add_argument('--image_size', type=int, nargs='*',
                         default=[84, 84], help='Size of cropped image')
+    parser.add_argument('--eval_episode', type=int, nargs='?', default=10, help='how many episode to run while evaluating model. The reward is caluated as the average of those episode')
     
     parser.add_argument('--resume', type=bool, nargs='?', default=True, help='Resuem from the checkpoints from <log_dir>/runs/<envname>/checkpoints')
 
@@ -59,8 +59,9 @@ def main():
     env = Environment(hps)
     model = Model(env, hps)
     logger = Logger(hps)
-    trainer = Trainer(env, model, hps, logger)
     evaluator = Evaluator(env, model, hps, logger)
+    trainer = Trainer(env, model, hps, logger, evaluator)
+    
     checkpoint_path = (args.log_dir / args.envname / 'checkpoints').resolve()
     # print(checkpoint_dir)
     if args.resume and len(list(checkpoint_path.rglob('saved_model.ckpt-*'))) != 0:
@@ -72,8 +73,12 @@ def main():
     # if args.resume:
     #     model_ckpt_path = get_latest_model_path(hps)
     #     model.l
-
-    trainer.train()
+    if args.play:
+        print('Start playing')
+        evaluator.play()
+    else:
+        print('Start training')
+        trainer.train()
     env.close()
     return
 

@@ -9,7 +9,8 @@ from dql.model import ReplayMemory
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class Trainer:
-    def __init__(self, env, model, hps, logger):
+    def __init__(self, env, model, hps, logger, evaluator):
+        self.evaluator = evaluator
         self.logger = logger
         self.env = env 
         self.model = model
@@ -69,19 +70,23 @@ class Trainer:
         self.running_reward = 0
         self.running_loss = 0
         return
+    def checkpoint_and_eval(self, i_episode):
+        self.logger.save_checkpoint(self.model, i_episode)
+        self.evaluator.eval(self.hps['eval_episode'])
+        return 
     def train(self):
         self.populate_replay_memory()
         sample_inputs = torch.stack(self.sample_batch().state)
 
         self.logger.add_graph(self.model, input_to_model=sample_inputs)
-        for i_episode in tqdm(range(1, self.hps['num_episode']+1)):
+        for i_episode in tqdm(range(1, self.hps['num_episode']+1), desc='Training'):
             self.train_single_episode(i_episode)
             if i_episode % self.hps['log_interval'] == 0:
                 self.loginfo(i_episode)
             if i_episode % self.hps['checkpoint_interval'] == 0:
-                self.logger.save_checkpoint(self.model, i_episode)
+                self.checkpoint_and_eval(i_episode)
         
         self.loginfo(self.hps['num_episode'])
-        self.logger.save_checkpoint(self.model, i_episode)
+        self.checkpoint_and_eval(self.hps['num_episode'])
         self.logger.close()
         return self.model

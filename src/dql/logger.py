@@ -14,7 +14,18 @@ class Logger:
         self.summary_writter = SummaryWriter(log_dir=str(self.log_dir / 'tensorboard_events'))
         self.current_process = psutil.Process()
         self.episode_offset = 0
+        self.log_hps()
         return 
+    def log_hps(self):
+        for k,v in self.hps.items():
+            if isinstance(v, int) or isinstance(v, float):
+                self.summary_writter.add_scalar(
+                    'hyperparameter/{}'.format(k), v)
+            else:
+                self.summary_writter.add_text(
+                    'hyperparameter/{}'.format(k), str(v))
+                
+        return
     def save_episodes(self, episodes):
         torch.save(episodes, str(self.saved_episode_dir))
         return 

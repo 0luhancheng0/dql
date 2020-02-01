@@ -28,23 +28,31 @@ class Evaluator:
         transition = Transition(state, action, reward, next_state, done)
         return transition
 
-    def train_single_episode(self, i_episode):
+    def eval_single_episode(self, i_episode):
         self.env.reset()
+        goal = 0
         state = self.env.get_init_state()
         done = False
         while not done:
             transition = self.generate_one_step_transition(state)
             done = transition.done
             state = transition.next_state
+            goal += transition.reward
             # self.running_loss += loss
             # self.running_reward += transition.reward
-        return transition.reward
-    def eval(self):
-        for i_episode in tqdm(range(self.hps['num_episode'])):
-            reward = self.train_single_episode(i_episode)
-            self.logger.add_scalar('reward', reward, i_episode)
+        return goal
+    def play(self):
+        for i_episode in tqdm(range(1, self.hps['num_episode']+1), desc='Playing'):
+            reward = self.eval_single_episode(i_episode)
+            self.logger.add_scalar('eval/cummulated_reward', reward, i_episode)
         self.logger.close()
         return self.model
+    def eval(self, num_epi):
+        total_reward = 0
+        for i_episode in tqdm(range(1, num_epi+1), desc='Evaluating'):
+            reward = self.eval_single_episode(num_epi)
+            total_reward += reward
+        return total_reward / num_epi
     # def load_model(self):
     #     checkpoint_path = (Path(hps['log_dir']) / 'runs' / hps['envname']).resolve()
         
