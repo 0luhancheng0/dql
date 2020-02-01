@@ -3,13 +3,13 @@ dql
 ===
 
 
-Add a short description here!
+My attempt to build a deep q network from scratch for atari game in openai gym environment. 
 
+The code is structured to be very configurable
 
 Description
 ===========
 
-A longer description of your project goes here...
 
 
 Note
