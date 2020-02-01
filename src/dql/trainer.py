@@ -37,7 +37,7 @@ class Trainer:
                 state = transition.next_state
         return 
     def generate_one_step_transition(self, state, current_eps):
-        action = self.model.policy_net.policy(
+        action = self.model.policy_net.eps_greedy_policy(
             state.unsqueeze(0), current_eps).squeeze()
         _, reward, done, _ = self.env.step(action.item())
         reward = torch.tensor(reward)
@@ -59,23 +59,29 @@ class Trainer:
             self.running_loss += loss
             self.running_reward += transition.reward
         return 
+    def loginfo(self, i_episode):
+        self.logger.add_scalar(
+            'episode/running_loss', self.running_loss / self.hps['log_interval'], i_episode)
+        self.logger.add_scalar(
+            'episode/running_reward', self.running_reward / self.hps['log_interval'], i_episode)
+        self.logger.add_scalar('episode/epsilon',self.eps_schedule(i_episode), i_episode)
+        self.logger.add_sys_info(i_episode)
+        self.running_reward = 0
+        self.running_loss = 0
+        return
     def train(self):
         self.populate_replay_memory()
         sample_inputs = torch.stack(self.sample_batch().state)
 
         self.logger.add_graph(self.model, input_to_model=sample_inputs)
-        for i_episode in tqdm(range(self.hps['num_episode'])):
+        for i_episode in tqdm(range(1, self.hps['num_episode']+1)):
             self.train_single_episode(i_episode)
             if i_episode % self.hps['log_interval'] == 0:
-                self.logger.add_scalar(
-                    'episode/running_loss', self.running_loss / self.hps['log_interval'], i_episode)
-                self.logger.add_scalar(
-                    'episode/running_reward', self.running_reward / self.hps['log_interval'], i_episode)
-                self.logger.add_scalar('episode/epsilon',self.eps_schedule(i_episode), i_episode)
-                self.logger.add_sys_info(i_episode)
-                self.running_reward = 0
-                self.running_loss = 0
+                self.loginfo(i_episode)
             if i_episode % self.hps['checkpoint_interval'] == 0:
                 self.logger.save_checkpoint(self.model, i_episode)
+        
+        self.loginfo(self.hps['num_episode'])
+        self.logger.save_checkpoint(self.model, i_episode)
         self.logger.close()
         return self.model

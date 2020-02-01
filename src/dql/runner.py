@@ -6,6 +6,8 @@ from dql.environment import Environment
 from dql.logger import Logger
 from dql.model import Model
 from dql.trainer import Trainer
+from dql.evaluator import Evaluator
+
 
 
 def parse_argument():
@@ -14,7 +16,7 @@ def parse_argument():
     parser.add_argument('--envname', type=str, nargs='?', default='CartPole-v0',
                         help='Need to be a valid gym atari environment')
     parser.add_argument('--train', type=bool, nargs='?', default=True, help='flag the training mode')
-    parser.add_argument('--resume', type=Path, nargs='?', default=Path('./runs/checkpoints'), help='Resuem from the checkpoints from given path')
+    
     parser.add_argument('-b', '--batch_size', type=int, nargs='?', default=32,
                         help='How many samples to gather from replay memory for each update')
     parser.add_argument('-n', '--num_episode', type=int, nargs='?', default=100,
@@ -37,6 +39,8 @@ def parse_argument():
                         0.9, 0.05, 200], help='consume 3 values which defines the epsilon decay schedule (start, end, steps)')
     parser.add_argument('--image_size', type=int, nargs='*',
                         default=[84, 84], help='Size of cropped image')
+    
+    parser.add_argument('--resume', type=bool, nargs='?', default=True, help='Resuem from the checkpoints from <log_dir>/runs/<envname>/checkpoints')
 
     args = parser.parse_args()
     if args.batch_size >= args.replay_mem_cap:
@@ -56,6 +60,19 @@ def main():
     model = Model(env, hps)
     logger = Logger(hps)
     trainer = Trainer(env, model, hps, logger)
+    evaluator = Evaluator(env, model, hps, logger)
+    checkpoint_path = (args.log_dir / args.envname / 'checkpoints').resolve()
+    # print(checkpoint_dir)
+    if args.resume and len(list(checkpoint_path.rglob('saved_model.ckpt-*'))) != 0:
+        
+        latest_episode_num = model.load_checkpoint()
+        print('load checkpoint from {0}/{1}'.format(checkpoint_path,
+                                                    'saved_model.ckpt-'+str(latest_episode_num)))
+        logger.set_episode_offset(latest_episode_num)
+    # if args.resume:
+    #     model_ckpt_path = get_latest_model_path(hps)
+    #     model.l
+
     trainer.train()
     env.close()
     return

@@ -13,31 +13,34 @@ class Logger:
         self.checkpoint_dir.mkdir(exist_ok=True)
         self.summary_writter = SummaryWriter(log_dir=str(self.log_dir / 'tensorboard_events'))
         self.current_process = psutil.Process()
+        self.episode_offset = 0
         return 
     def save_episodes(self, episodes):
         torch.save(episodes, str(self.saved_episode_dir))
         return 
-    def save_checkpoint(self, model, i_eposide):
+    def add_episode_offset(self, current_episode):
+        return self.episode_offset + current_episode
+    def set_episode_offset(self, offset):
+        self.episode_offset = offset
+        return 
+    def save_checkpoint(self, model, i_episode):
+        # print(self.add_episode_offset(i_episode))
         saved_dict = {
             'policynet': model.policy_net.state_dict(), 
-            'targetnet': model.target_net.state_dict(),
             'optimizer': model.optimizer.state_dict()
         }
-        torch.save(saved_dict, str(self.checkpoint_dir / str('saved_model-' + str(i_eposide) + '.pth')))
+        torch.save(saved_dict, str(self.checkpoint_dir / 'saved_model.ckpt-{}'.format(self.add_episode_offset(i_episode))))
         return 
-    def add_sys_info(self, i_eposide):
-        self.summary_writter.add_scalar('sys/cpu_percentage', self.current_process.cpu_percent(), i_eposide)
+    def add_sys_info(self, i_episode):
+        self.summary_writter.add_scalar('sys/cpu_percentage', self.current_process.cpu_percent(), self.add_episode_offset(i_episode))
         self.summary_writter.add_scalar(
-            'sys/memory_percent', self.current_process.memory_percent(), i_eposide)
+            'sys/memory_percent', self.current_process.memory_percent(), self.add_episode_offset(i_episode))
         return 
-    def load_checkpoint(self, path):
-
-        return
-    def add_scalars(self, *args, **kwargs):
-        return self.summary_writter.add_scalars(*args, **kwargs)
-    def add_scalar(self, *args, **kwargs):
-        return self.summary_writter.add_scalar(*args, **kwargs)
+    def add_scalar(self, tag, scalar_value, i_episode):
+        return self.summary_writter.add_scalar(tag, scalar_value, global_step=self.add_episode_offset(i_episode))
     def add_graph(self, model, **kwargs):
+        if self.episode_offset != 0:
+            return 
         self.summary_writter.add_graph(model.policy_net, **kwargs)
         self.summary_writter.add_graph(model.target_net, **kwargs)
         return

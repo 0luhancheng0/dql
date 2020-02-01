@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 from dql.helper import Transition
+from dql.helper import get_latest_model_path
 # from torch.utils.tensorboard import SummaryWriter
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -57,12 +58,14 @@ class DQN(nn.Module):
         x = F.relu(self.bn3(self.conv3(x)))
         return self.output_layer(x.view(x.size(0), -1))
 
-    def policy(self, state, eps):
+    def eps_greedy_policy(self, state, eps):
         if np.random.sample() > eps:
             with torch.no_grad():
-                return self(state).argmax(1)
+                return self.greedy_policy(state)
         else:
             return torch.tensor([[np.random.choice(np.arange(self.n_actions))]], device=device, dtype=torch.long)
+    def greedy_policy(self, state):
+        return self(state).argmax(1)
 
 class Model:
     def __init__(self, env, hps):
@@ -101,3 +104,11 @@ class Model:
     def update_target(self):
         self.target_net.load_state_dict(self.policy_net.state_dict())
         return
+    def load_checkpoint(self):
+        model_ckpt_path, latest_episode_num = get_latest_model_path(self.hps)
+        checkpoint = torch.load(model_ckpt_path)
+        self.optimizer.load_state_dict(checkpoint['optimizer'])
+        self.policy_net.load_state_dict(checkpoint['policynet'])
+        self.update_target()
+        # self.target_net.load_state_dict(checkpoint['target_net'])
+        return latest_episode_num
