@@ -34,10 +34,10 @@ Transition = namedtuple(
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-class logger:
-    def __init__(self, agent, hps):
-        
-        return 
+# class logger:
+#     def __init__(self, agent, hps):
+#         self.agent = 
+#         return 
 
 # just a implementation of random access queue
 class ReplayMemory:
