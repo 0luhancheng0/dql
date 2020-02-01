@@ -4,6 +4,9 @@ dql
 
 This is the documentation of **dql**.
 
+.. include:: ../README.rst
+    :start-after: .. include_after_this_label
+
 .. note::
 
     This is the main page of your project's `Sphinx`_ documentation.
