@@ -3,10 +3,8 @@ import numpy as np
 import gym
 from collections import defaultdict
 from tqdm import tqdm
-# import re
 from dql.helper import Transition
 from pathlib import Path
-# from dql.model import ReplayMemory
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -38,8 +36,6 @@ class Evaluator:
             done = transition.done
             state = transition.next_state
             goal += transition.reward
-            # self.running_loss += loss
-            # self.running_reward += transition.reward
         return goal
     def play(self):
         for i_episode in tqdm(range(1, self.hps['num_episode']+1), desc='Playing'):
@@ -53,7 +49,3 @@ class Evaluator:
             reward = self.eval_single_episode(num_epi)
             total_reward += reward
         return total_reward / num_epi
-    # def load_model(self):
-    #     checkpoint_path = (Path(hps['log_dir']) / 'runs' / hps['envname']).resolve()
-        
-    #     return 
