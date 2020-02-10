@@ -12,6 +12,7 @@ Description
 
 .. include_after_this_label
 
-This is an attempt to implement deep Q network from scratch (depending on how you define 'scratch'). 
-I may not be able to actively maintain this repo. But i do have a few thing on my todo list. Please refer to issue #1 for more details
+This is an attempt to implement deep Q network from scratch
+
+
 
